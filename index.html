@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Six Weeks at Prairie Global</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a wall planner. Six week tabs run across a canola-yellow band, gauges sit under them, and the current week fills the sheet below. */
+:root {
+  --ground: #F4F5EF; --sheet: #FFFFFF; --ink: #17263F; --muted: #55617A; --line: #CDD2CF;
+  --canola: #F4C51F; --on-canola: #17263F; --sky: #1F5FA8; --good: #1E7A4C; --bad: #B4332A;
+  --display: "Anton", Impact, "Arial Narrow", sans-serif;
+  --body: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #101B2E; --sheet: #182740; --ink: #EEF1EA; --muted: #A9B5C8; --line: #33445F;
+  --canola: #F4C51F; --on-canola: #17263F; --sky: #84B9F2; --good: #6FD09E; --bad: #FF9A8E; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --ground: #101B2E; --sheet: #182740; --ink: #EEF1EA; --muted: #A9B5C8; --line: #33445F;
+  --canola: #F4C51F; --on-canola: #17263F; --sky: #84B9F2; --good: #6FD09E; --bad: #FF9A8E; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 16px/1.55 var(--body); }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: 960px; margin: 0 auto; }
+
+.band { background: var(--canola); color: var(--on-canola); padding-block: 18px 0; }
+.band .top { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; align-items: end; }
+h1 { margin: 0; font: 400 clamp(34px, 7vw, 60px)/1.05 var(--display); letter-spacing: .01em; text-transform: uppercase; }
+.team label { display: block; font-size: 13px; font-weight: 700; }
+.team input { width: 170px; padding: 5px 8px; border: 2px solid var(--on-canola); background: transparent; color: var(--on-canola); border-radius: 2px; }
+.weeks { list-style: none; display: grid; grid-template-columns: 1.3fr repeat(6, 1fr) 1.1fr; gap: 3px; margin: 14px 0 0; padding: 0; }
+.weeks li { padding: 6px 4px; text-align: center; font-size: 13px; font-weight: 700; border-radius: 3px 3px 0 0; background: rgba(23,38,63,.13); color: var(--on-canola); min-width: 0; }
+.weeks li.now { background: var(--ground); color: var(--ink); }
+.weeks li.past { background: var(--on-canola); color: var(--canola); }
+
+main.inner { display: grid; gap: 18px; padding-block: 18px 32px; }
+.gauges { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 12px 24px; align-items: end; }
+.gauge > span, .stat > span { display: block; font-size: 13px; color: var(--muted); font-weight: 700; }
+.bar { height: 12px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--sky); transition: width .35s; }
+.stat b { font: 400 26px/1.1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: clamp(16px, 3vw, 28px); display: grid; gap: 16px; }
+.kicker { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+h2 { margin: 0; font: 400 clamp(26px, 4.5vw, 38px)/1.1 var(--display); letter-spacing: .01em; text-wrap: balance; }
+h3 { margin: 0; font-size: 18px; line-height: 1.3; }
+p { margin: 0; max-width: 68ch; }
+.head { display: grid; gap: 4px; }
+.head:focus { outline: none; }
+
+.choices { display: grid; gap: 8px; }
+.choice {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 12px 14px; text-align: left;
+  background: transparent; border: 2px solid var(--line); border-radius: 3px;
+}
+.choice:hover:not(:disabled) { border-color: var(--sky); }
+.choice[aria-pressed="true"] { border-color: var(--on-canola); background: var(--canola); color: var(--on-canola); }
+.choice[aria-pressed="true"] small { color: var(--on-canola); }
+.choice small { display: block; color: var(--muted); font-size: 14px; }
+.choice .price { font: 400 22px/1 var(--display); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.choice:disabled { cursor: not-allowed; opacity: .68; border-style: dashed; }
+.lock { grid-column: 1 / -1; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+.talk { display: grid; gap: 10px; padding: 14px; background: var(--ground); border-radius: 3px; }
+.talk .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.secondary, .primary { padding: 9px 16px; border-radius: 3px; font-weight: 700; }
+.secondary { background: transparent; border: 2px solid var(--ink); }
+.secondary:disabled { opacity: .5; cursor: not-allowed; }
+.primary { background: var(--on-canola); color: var(--canola); border: 2px solid var(--on-canola); justify-self: start; }
+.quote { padding-left: 12px; border-left: 4px solid var(--canola); font-weight: 700; }
+.delta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.up { color: var(--good); } .down { color: var(--bad); } .flat { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 7px 12px; background: transparent; border: 2px solid var(--line); border-radius: 3px; }
+.chip.right { border-color: var(--good); color: var(--good); font-weight: 700; }
+.chip.wrong { border-color: var(--bad); color: var(--bad); text-decoration: line-through; }
+.chip:disabled { cursor: default; }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 15px; }
+th, td { padding: 8px 10px 8px 0; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+th { font-size: 13px; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 68ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.foot { font-size: 14px; color: var(--muted); }
+textarea#copyBox { width: 100%; min-height: 150px; font: 14px/1.5 var(--body); padding: 8px; background: var(--ground); color: var(--ink); border: 1px solid var(--line); }
+
+@media (max-width: 640px) {
+  .gauges { grid-template-columns: 1fr 1fr; }
+  .weeks { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .weeks li { font-size: 11px; padding: 5px 0; }
+  .weeks .long { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="band gutter">
+  <div class="inner">
+    <div class="top">
+      <h1>Six Weeks at Prairie Global</h1>
+      <div class="team"><label for="team">Consulting team</label><input id="team" maxlength="24" value="Team 1"></div>
+    </div>
+    <ol class="weeks" id="weeks" aria-label="Progress"></ol>
+  </div>
+</div>
+<div class="gutter">
+  <main class="inner">
+    <div class="gauges" aria-label="Your gauges">
+      <div class="gauge"><span>Team trust: <span id="trustN"></span></span><div class="bar"><i id="trustB"></i></div></div>
+      <div class="gauge"><span>Performance: <span id="resN"></span></span><div class="bar"><i id="resB"></i></div></div>
+      <div class="stat"><span>Budget left</span><b id="left"></b></div>
+      <div class="stat"><span>Conversations</span><b id="conv"></b></div>
+    </div>
+    <section class="sheet" id="stage" aria-live="off"></section>
+    <p class="foot">Characters are fictional. Their preferences change from one playthrough to the next, because background does not determine what any individual wants.</p>
+  </main>
+</div>
+
+<script>
+const STRATEGIES = {
+  training: { name: "Cross-cultural training", cost: 2500, note: "Workshop for all 85 employees. Also adds 1 conversation." },
+  involvement: { name: "Employee involvement", cost: 1200, note: "Facilitated input sessions and a suggestion process." },
+  inclusive: { name: "Inclusive communication", cost: 800, note: "Shared feedback norms and plain-language guidance." },
+  objectives: { name: "Diversity objectives", cost: 700, note: "Measurable goals and a simple scorecard." },
+  accountability: { name: "Accountability", cost: 600, note: "A named owner and regular progress reviews." }
+};
+const CONCEPTS = ["Power distance", "Individualism vs. collectivism", "Uncertainty avoidance", "Masculinity vs. femininity", "Long-term vs. short-term orientation", "Semantics, conventions, nonverbal"];
+
+/* Each effect is [trust, performance, result]. The first version of the person is A and the second is B. */
+const SCENES = [
+  { title: "The quiet analyst", issue: "Decision-making", concept: 0, person: "Daniel",
+    setup: "You must choose a scheduling tool by Friday. Daniel, an analyst who spent ten years at a firm in Seoul, says nothing in the team meeting. A coworker tells you: \"He comes from a hierarchical culture. Just tell him what to do.\"",
+    says: ["I'd rather you make the call. Once you do, I'll move quickly.", "I've tested two of these tools. I left my last job because nobody asked for my view."],
+    options: [
+      { text: "Choose the tool yourself and assign Daniel the rollout.", a: [10, 8, "Daniel gets clear direction and starts the same day."], b: [-12, -6, "Daniel's test results go unused, and the tool has a flaw he already knew about."] },
+      { text: "Put the decision to an open team vote.", a: [-6, -2, "Daniel feels put on the spot and wonders why his manager won't decide."], b: [7, 4, "Daniel finally speaks up, and the team uses his test results."] },
+      { text: "Collect written input from everyone, then make the final call and explain it.", needs: "involvement", a: [9, 9, "Daniel gets a clear decision, and quieter staff had a way to contribute."], b: [10, 10, "Daniel's written analysis shapes the decision."] }
+    ] },
+  { title: "The contract bonus", issue: "Individual vs. team rewards", concept: 1, person: "Fatima",
+    setup: "Fatima, who grew up in Brandon and has worked in Winnipeg her whole career, led the team that landed your largest contract. You have money for a reward. Your director says: \"She's Canadian. Give her the spotlight and the bonus.\"",
+    says: ["I pushed hard for this. Recognize what I did, and pay me for it.", "Please don't single me out. Six of us won this contract, and I want the team rewarded."],
+    options: [
+      { text: "Give Fatima an individual bonus and announce it at the all-staff meeting.", a: [9, 7, "Fatima feels valued and stays motivated."], b: [-11, -6, "Fatima is embarrassed, and her teammates resent the announcement."] },
+      { text: "Split the money equally across the six-person team.", a: [-9, -5, "Fatima starts asking why she took on the extra work."], b: [10, 7, "Fatima thanks you, and the team stays close."] },
+      { text: "Publish a scorecard that rewards both team results and individual contributions.", needs: "objectives", a: [8, 9, "Fatima's contribution counts, and the rules are clear for everyone."], b: [8, 9, "The team's success counts most, and nobody is singled out without warning."] }
+    ] },
+  { title: "Fourteen questions", issue: "Risk and uncertainty", concept: 2, person: "Greta",
+    setup: "A new client project starts Monday. Greta sends you fourteen questions and asks for written procedures. Another employee, Tomás, says the procedures will kill the project and wants to start experimenting.",
+    says: ["I do my best work with a written plan. Unclear steps worry me.", "I'm happy to experiment. I only need the deadline and the budget, and those are the questions you missed."],
+    options: [
+      { text: "Spend the weekend writing full procedures for the project.", a: [7, 3, "Greta is comfortable, but Tomás feels boxed in and the start slips."], b: [-7, -7, "Greta didn't need this. The team loses a week, and Tomás is frustrated."] },
+      { text: "Tell the team to start and figure it out as they go.", a: [-11, -6, "Greta stalls and raises the problem again by Wednesday."], b: [4, 7, "Greta and Tomás move fast once you share the deadline and budget."] },
+      { text: "Set fixed checkpoints and a named owner, with freedom to experiment between them.", needs: "accountability", a: [9, 8, "Greta has the structure she needs, and Tomás has room to try ideas."], b: [8, 9, "The team moves quickly, and problems surface early."] }
+    ] },
+  { title: "The promotion offer", issue: "Workplace priorities", concept: 3, person: "Kofi",
+    setup: "A regional manager role opens up. It pays 20% more and requires heavy travel. Kofi is your best performer. He often leaves at 4:30 to pick up his kids, so your HR lead says: \"He won't want it. Offer it to someone else.\"",
+    says: ["I want this job. I've been working toward it, and we can arrange childcare.", "Thanks, but I value my evenings with my kids more than the title. I'd like more interesting work here."],
+    options: [
+      { text: "Offer Kofi the promotion and make the raise the headline.", a: [10, 8, "Kofi accepts right away and takes on the region."], b: [-5, -5, "Kofi declines and worries that you don't understand what matters to him."] },
+      { text: "Skip Kofi and offer the role to someone else.", a: [-13, -8, "Kofi learns he was passed over because of an assumption, and starts looking elsewhere."], b: [3, 2, "Kofi is relieved, though nobody asked him what he wanted."] },
+      { text: "Have every manager hold career conversations using what they learned in training.", needs: "training", a: [10, 9, "Kofi says he wants the role, and the role is his."], b: [10, 9, "Kofi declines and helps redesign his current job."] }
+    ] },
+  { title: "Quarter end", issue: "Short-term vs. long-term planning", concept: 4, person: "Mei",
+    setup: "It's two weeks to quarter end, and the team is short of target. Mei asks to spend four days visiting a slow-moving client. Rafael wants everyone calling for immediate sales. A coworker says: \"Mei always plays the long game. That's just how she was raised.\"",
+    says: ["This client could be worth ten years of work, but the relationship needs attention now.", "Actually, this client could sign this quarter. I need the visit to close the deal."],
+    options: [
+      { text: "Refuse the trip and put everyone on calls until quarter end.", a: [-9, 3, "You hit more of the target, but the client relationship cools and Mei feels dismissed."], b: [-8, -8, "You lose the deal that would have closed the gap."] },
+      { text: "Approve the trip and tell Rafael to carry the shortfall.", a: [3, -3, "The relationship improves, but Rafael resents the extra pressure."], b: [5, 9, "Mei closes the deal, though Rafael wishes you had explained the decision."] },
+      { text: "Assign an owner to each goal and review the short- and long-term numbers weekly.", needs: "accountability", a: [8, 7, "Mei visits the client, Rafael leads the calls, and both goals count."], b: [8, 10, "The review shows that Mei's deal can close the gap, so Rafael backs the trip."] }
+    ] },
+  { title: "The feedback email", issue: "Communication misunderstandings", concept: 5, person: "Ben",
+    setup: "In front of the team, Anika tells Ben: \"This report is wrong.\" Ben goes silent, then sends you an upset message. Anika says: \"I was being helpful. Where I trained, this is how you give feedback.\"",
+    says: ["I need that kind of feedback in private. In front of everyone, it felt like an attack.", "I don't mind directness. But she never said which numbers were wrong, so I can't fix it."],
+    options: [
+      { text: "Tell Anika to give all criticism privately from now on.", a: [7, 3, "Ben feels protected, but Anika thinks she was blamed for trying to help."], b: [-7, -4, "Ben's real problem stays unsolved, and Anika stops giving useful feedback."] },
+      { text: "Tell Ben that direct feedback is normal and he should get used to it.", a: [-12, -6, "Ben stops contributing in meetings."], b: [-2, 1, "Ben agrees, but he still doesn't know which numbers to fix."] },
+      { text: "Have the team agree on feedback norms: be specific, choose the setting and confirm understanding.", needs: "inclusive", a: [10, 8, "Ben gets private feedback, and Anika can still be direct."], b: [9, 10, "Anika names the numbers, and Ben fixes the report that day."] }
+    ] }
+];
+
+const KEY = "prairie-global-v1";
+const fresh = () => ({ phase: "budget", week: 0, bought: [], trust: 50, res: 50, used: 0, versions: SCENES.map(() => Math.random() < .5 ? 0 : 1), asked: [], picks: [], concepts: [], team: state ? state.team : "Team 1" });
+let state = null;
+state = fresh();
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.versions && s.versions.length === SCENES.length) state = { ...state, ...s }; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+const $ = id => document.getElementById(id);
+const spent = () => state.bought.reduce((a, k) => a + STRATEGIES[k].cost, 0);
+const money = n => "$" + n.toLocaleString("en-CA");
+const allowance = () => 3 + (state.bought.includes("training") ? 1 : 0);
+const clamp = n => Math.max(0, Math.min(100, n));
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function button(cls, text, fn) { const b = el("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
+function header(kicker, title, focus) {
+  const h = el("div", "head"); h.tabIndex = -1;
+  h.append(el("p", "kicker", kicker), el("h2", null, title));
+  if (focus) setTimeout(() => h.focus({ preventScroll: true }), 0);
+  return h;
+}
+
+function chrome() {
+  const w = $("weeks"); w.innerHTML = "";
+  const current = state.phase === "budget" ? 0 : state.phase === "report" ? 7 : state.week + 1;
+  ["Budget", 1, 2, 3, 4, 5, 6, "Report"].forEach((label, i) => {
+    const li = el("li", i === current ? "now" : i < current ? "past" : "", typeof label === "number" ? label : label);
+    if (typeof label === "number" && innerWidth > 640) li.textContent = "Wk " + label;
+    if (i === current) li.setAttribute("aria-current", "step");
+    if (typeof label !== "number" && innerWidth <= 640) li.textContent = i === 0 ? "$" : "End";
+    w.append(li);
+  });
+  $("trustN").textContent = state.trust; $("resN").textContent = state.res;
+  $("trustB").style.width = state.trust + "%"; $("resB").style.width = state.res + "%";
+  $("left").textContent = money(5000 - spent());
+  $("conv").textContent = (allowance() - state.used) + " of " + allowance();
+  if (document.activeElement !== $("team")) $("team").value = state.team;
+}
+
+function budget(s) {
+  s.append(header("Before week 1", "Spend your $5,000"));
+  s.append(el("p", null, "Leadership gave your consulting team $5,000. Funding all five strategies would cost $5,800, so you must prioritize. Each strategy unlocks a better management response in later weeks."));
+  const list = el("div", "choices");
+  Object.entries(STRATEGIES).forEach(([k, v]) => {
+    const on = state.bought.includes(k);
+    const b = button("choice", "", () => { state.bought = on ? state.bought.filter(x => x !== k) : [...state.bought, k]; go(); setTimeout(() => $("s-" + k)?.focus(), 0); });
+    b.id = "s-" + k;
+    b.setAttribute("aria-pressed", on);
+    const left = el("span"); left.append(el("b", null, v.name), el("small", null, v.note));
+    b.append(left, el("span", "price", money(v.cost)));
+    if (!on && spent() + v.cost > 5000) { b.disabled = true; b.append(el("span", "lock", "Not enough budget left. Remove another strategy first.")); }
+    list.append(b);
+  });
+  s.append(list);
+  s.append(button("primary", "Start week 1", () => { state.phase = "week"; state.week = 0; go(true); }));
+}
+
+function week(s) {
+  const i = state.week, sc = SCENES[i], asked = state.asked.includes(i);
+  s.append(header(`Week ${i + 1} · ${sc.issue}`, sc.title, true));
+  s.append(el("p", null, sc.setup));
+  const talk = el("div", "talk");
+  if (asked) {
+    talk.append(el("p", "kicker", sc.person + " tells you"), el("p", "quote", "\"" + sc.says[state.versions[i]] + "\""));
+  } else {
+    const row = el("div", "row"), left = allowance() - state.used;
+    const b = button("secondary", `Talk to ${sc.person} first`, () => { state.asked.push(i); state.used++; go(); });
+    b.disabled = left < 1;
+    row.append(b, el("span", "foot", left < 1 ? "You have used all your conversations." : `Uses 1 of your ${left} remaining conversation${left === 1 ? "" : "s"}. Otherwise, you decide on an assumption.`));
+    talk.append(row);
+  }
+  s.append(talk);
+  s.append(el("h3", null, "What do you do?"));
+  const list = el("div", "choices");
+  sc.options.forEach((o, k) => {
+    const locked = o.needs && !state.bought.includes(o.needs);
+    const b = button("choice", "", () => {
+      const fx = k2(o);
+      state.trust = clamp(state.trust + fx[0]); state.res = clamp(state.res + fx[1]);
+      state.picks[i] = k; state.phase = "outcome"; go(true);
+    });
+    const left = el("span", null, o.text);
+    if (o.needs) left.append(el("small", null, locked ? "" : "Funded: " + STRATEGIES[o.needs].name));
+    b.append(left);
+    if (locked) { b.disabled = true; b.append(el("span", "lock", "Locked: you did not fund " + STRATEGIES[o.needs].name.toLowerCase() + ".")); }
+    list.append(b);
+  });
+  s.append(list);
+}
+const k2 = o => state.versions[state.week] === 0 ? o.a : o.b;
+
+function outcome(s) {
+  const i = state.week, sc = SCENES[i], o = sc.options[state.picks[i]], fx = k2(o), asked = state.asked.includes(i);
+  s.append(header(`Week ${i + 1} · Result`, sc.title, true));
+  s.append(el("p", null, fx[2]));
+  const d = el("div", "delta");
+  [["Trust", fx[0]], ["Performance", fx[1]]].forEach(([n, v]) => d.append(el("span", v > 0 ? "up" : v < 0 ? "down" : "flat", `${n} ${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v)}`)));
+  s.append(d);
+  if (!asked) { s.append(el("p", "kicker", `What ${sc.person} would have told you`), el("p", "quote", "\"" + sc.says[state.versions[i]] + "\"")); }
+  s.append(el("h3", null, "Which concept from the chapter is at work here?"));
+  const chips = el("div", "chips"), pick = state.concepts[i];
+  CONCEPTS.forEach((c, k) => {
+    const b = button("chip", c, () => { state.concepts[i] = k; go(); });
+    if (pick != null) { b.disabled = true; if (k === sc.concept) b.classList.add("right"); else if (k === pick) b.classList.add("wrong"); }
+    chips.append(b);
+  });
+  s.append(chips);
+  if (pick != null) {
+    s.append(el("p", pick === sc.concept ? "up" : "down", pick === sc.concept ? "Correct. +5 report points." : "Not this one. The correct concept is marked in green."));
+    s.append(button("primary", i === 5 ? "See your report" : `Start week ${i + 2}`, () => { if (i === 5) state.phase = "report"; else { state.week++; state.phase = "week"; } go(true); }));
+  }
+}
+
+function final() {
+  const right = state.concepts.filter((c, i) => c === SCENES[i].concept).length;
+  return { right, total: state.trust + state.res + right * 5 };
+}
+function rating(t) { return t >= 190 ? "Trusted advisor" : t >= 160 ? "Solid consultant" : t >= 125 ? "Learning on the job" : "Contract under review"; }
+function summary() {
+  const f = final();
+  return `${state.team}: ${rating(f.total)} (${f.total}/230)\nTrust ${state.trust}, Performance ${state.res}, Concepts ${f.right}/6\nFunded: ${state.bought.map(k => STRATEGIES[k].name).join(", ") || "nothing"} (${money(spent())})\nConversations used: ${state.used} of ${allowance()}`;
+}
+function report(s) {
+  const f = final();
+  s.append(header("Report to leadership", rating(f.total), true));
+  s.append(el("p", null, `${state.team} scored ${f.total} out of 230: trust ${state.trust}, performance ${state.res} and ${f.right} of 6 concepts correct (5 points each).`));
+  const wrap = el("div", "tablewrap"), t = el("table");
+  t.innerHTML = "<thead><tr><th>Week</th><th>Issue</th><th>What the person wanted</th><th>Did you ask?</th><th>Trust / Perf.</th></tr></thead>";
+  const body = el("tbody");
+  SCENES.forEach((sc, i) => {
+    const fx = sc.options[state.picks[i]][state.versions[i] === 0 ? "a" : "b"], r = el("tr");
+    const n = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v);
+    [i + 1, sc.issue, `${sc.person}: "${sc.says[state.versions[i]]}"`, state.asked.includes(i) ? "Yes" : "No", `${n(fx[0])} / ${n(fx[1])}`].forEach((v, k) => r.append(el("td", k === 4 ? "num" : "", v)));
+    body.append(r);
+  });
+  t.append(body); wrap.append(t); s.append(wrap);
+  s.append(el("h3", null, "Debrief as a class"));
+  const ul = el("ul", "plain");
+  ["Which weeks did you decide without asking? What assumption were you making?", "Did another team's Daniel, Fatima or Kofi want something different from yours? What does that tell you about stereotypes?", "Does managing diversity mean treating everyone exactly the same?", "Which strategy did you leave unfunded? Would you make the same choice again?"].forEach(q => ul.append(el("li", null, q)));
+  s.append(ul);
+  const box = el("textarea"); box.id = "copyBox"; box.value = summary(); box.readOnly = true; box.setAttribute("aria-label", "Team results to copy");
+  const msg = el("span", "foot"); msg.setAttribute("role", "status");
+  const acts = el("div", "actions");
+  const copy = button("secondary", "Copy team results", () => {
+    navigator.clipboard.writeText(box.value).then(() => { msg.textContent = "Copied."; }).catch(() => { box.select(); msg.textContent = "Press Ctrl+C or Cmd+C to copy the selected text."; });
+  });
+  acts.append(copy, button("primary", "Play again", () => { state = fresh(); go(true); }), msg);
+  s.append(box, acts);
+}
+
+function go(scroll) {
+  save(); chrome();
+  const s = $("stage"); s.innerHTML = "";
+  ({ budget, week, outcome, report })[state.phase](s);
+  if (scroll) scrollTo({ top: 0, behavior: "auto" });
+}
+$("team").addEventListener("input", e => { state.team = e.target.value || "Team"; save(); });
+addEventListener("resize", chrome);
+go();
+</script>
+
+</html>
